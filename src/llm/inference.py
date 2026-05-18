@@ -53,19 +53,19 @@ class GemmaInference:
             add_generation_prompt=True,
         )
 
-    def chat(self, messages: list, max_new_tokens: int = None) -> str:
+    def chat(self, messages: list, max_new_tokens: int = None, temperature: float = 0.7) -> str:
         """Vollständige Antwort generieren (blockierend)."""
         result = self.pipe(
             self._build_prompt(messages),
             max_new_tokens=max_new_tokens or MAX_NEW_TOKENS,
-            do_sample=True,
-            temperature=0.7,
+            do_sample=temperature > 0,
+            temperature=temperature,
             top_p=0.9,
             return_full_text=False,
         )
         return result[0]["generated_text"].strip()
 
-    def chat_stream(self, messages: list, max_new_tokens: int = None) -> Iterator[str]:
+    def chat_stream(self, messages: list, max_new_tokens: int = None, temperature: float = 0.7) -> Iterator[str]:
         """
         Antwort als Stream generieren — Token für Token.
         Yield: jeweils ein neues Textstück.
@@ -84,8 +84,8 @@ class GemmaInference:
         gen_kwargs = {
             **inputs,
             "max_new_tokens": max_new_tokens or MAX_NEW_TOKENS,
-            "do_sample": True,
-            "temperature": 0.7,
+            "do_sample": temperature > 0,
+            "temperature": temperature,
             "top_p": 0.9,
             "streamer": streamer,
         }

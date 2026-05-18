@@ -12,9 +12,14 @@ from loguru import logger
 from src.retrieval.web_search import search_and_fetch, format_web_context
 from src.retrieval.query_engine import QueryEngine
 
-TOKENS_PER_SECTION = 8192
-TOKENS_SYNTHESIS   = 16384
-TOKENS_PLAN        = 2048
+TOKENS_PER_SECTION  = 8192
+TOKENS_SYNTHESIS    = 16384
+TOKENS_PLAN         = 2048
+TOKENS_VERIFICATION = 4096
+
+# Niedrige Temperature für faktentreue Berichte
+TEMP_FACTUAL = 0.3
+TEMP_PLAN    = 0.5
 
 
 def _clean(text: str) -> str:
@@ -156,7 +161,7 @@ class ResearchAgent:
             },
         ]
 
-        raw = self.llm.chat(prompt, max_new_tokens=TOKENS_PLAN)
+        raw = self.llm.chat(prompt, max_new_tokens=TOKENS_PLAN, temperature=TEMP_PLAN)
         try:
             match = re.search(r'\{.*\}', raw, re.DOTALL)
             if match:
@@ -204,9 +209,11 @@ class ResearchAgent:
             {
                 "role": "system",
                 "content": (
-                    "Du bist PKC, ein tiefgründiger Wissensassistent. "
-                    "Erstelle eine umfassende, detaillierte Analyse auf Deutsch. "
-                    "Sei präzise, konkret und erschöpfend — kein Fülltext."
+                    "Du bist PKC, ein präziser Wissensassistent. "
+                    "Wichtigste Regel: Schreibe NUR was durch die bereitgestellten Quellen belegt ist. "
+                    "Kennzeichne jede Aussage mit [Vault] oder [Web] als Quellenangabe. "
+                    "Wenn du etwas nicht sicher weißt, schreibe 'Unklar:' davor. "
+                    "Kein Fülltext, keine Spekulationen ohne Kennzeichnung."
                 ),
             },
             {
@@ -219,12 +226,13 @@ class ResearchAgent:
                     f"{prev_ctx}\n"
                     f"Schreibe einen tiefen, detaillierten Abschnitt über '{subtopic}' "
                     f"im Kontext von '{main_topic}'. "
+                    f"Kennzeichne jede Aussage mit [Vault] oder [Web]. "
                     f"Verbinde mit bisherigen Erkenntnissen. Mindestens 600 Wörter."
                 ),
             },
         ]
 
-        content = _clean(self.llm.chat(prompt, max_new_tokens=TOKENS_PER_SECTION))
+        content = _clean(self.llm.chat(prompt, max_new_tokens=TOKENS_PER_SECTION, temperature=TEMP_FACTUAL))
         return {"subtopic": subtopic, "content": content, "sources": sources}
 
     def _synthesize(self, topic: str, sections: List[Dict], use_web: bool) -> str:
@@ -264,4 +272,31 @@ class ResearchAgent:
             },
         ]
 
-        return _clean(self.llm.chat(prompt, max_new_tokens=TOKENS_SYNTHESIS))
+        synthesis = _clean(self.llm.chat(prompt, max_new_tokens=TOKENS_SYNTHESIS, temperature=TEMP_FACTUAL))
+
+        # ── Verifikationspass ──────────────────────────────────────────
+        # Das Modell prüft seinen eigenen Output gegen die Quellen
+        verify_prompt = [
+            {
+                "role": "system",
+                "content": (
+                    "Du bist ein kritischer Faktenprüfer. "
+                    "Prüfe den folgenden Bericht auf Aussagen die nicht durch die Quellen belegt sind. "
+                    "Markiere unbelegte Aussagen mit ⚠️ und erkläre kurz warum. "
+                    "Aussagen die klar durch Quellen belegt sind, bestätige mit ✓. "
+                    "Sei streng — lieber zu vorsichtig als zu großzügig."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Originalquellen (Vault + Web):\n"
+                    f"{sections_text[:3000]}\n\n"
+                    f"Zu prüfender Bericht (Auszug):\n{synthesis[:2000]}\n\n"
+                    f"Prüfe die wichtigsten Aussagen und markiere Probleme."
+                ),
+            },
+        ]
+        verification = _clean(self.llm.chat(verify_prompt, max_new_tokens=TOKENS_VERIFICATION, temperature=TEMP_FACTUAL))
+
+        return synthesis + f"\n\n---\n## Verifikationsprotokoll\n{verification}"

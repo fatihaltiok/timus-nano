@@ -292,7 +292,7 @@ def create_report(req: ReportRequest):
 
     # 4. Bericht generieren
     prompt = build_report_prompt(req.topic, vault_context, web_context, history_text)
-    report_text = _query_engine.llm.chat(prompt, max_new_tokens=16384)
+    report_text = _query_engine.llm.chat(prompt, max_new_tokens=16384, temperature=0.3)
 
     # 5. Metadaten-Header anhängen
     now = datetime.datetime.now()
