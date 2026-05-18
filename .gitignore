@@ -1,0 +1,39 @@
+# Umgebungsvariablen & Secrets
+.env
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Node / Frontend
+dashboard/node_modules/
+dashboard/dist/
+
+# Persönliche Daten
+data/sample_docs/
+reports/
+notebooks/
+*.db
+
+# Logs
+*.log
+logs/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

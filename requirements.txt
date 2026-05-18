@@ -1,0 +1,46 @@
+# Web Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# Embeddings & ML
+sentence-transformers==3.1.1
+torch==2.4.1
+transformers==4.44.2
+
+# Vector Database
+qdrant-client==1.11.1
+
+# Graph Database
+neo4j==5.24.0
+
+# Relational Database
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.35
+
+# Cache
+redis==5.1.1
+
+# Task Queue
+celery==5.4.0
+
+# Document Parsing
+markdown==3.7
+beautifulsoup4==4.12.3
+pygments==2.18.0
+
+# Utilities
+python-dotenv==1.0.1
+pydantic==2.9.2
+pydantic-settings==2.5.2
+httpx==0.27.2
+tqdm==4.66.5
+loguru==0.7.2
+
+# Web Search
+duckduckgo-search==6.3.7
+trafilatura==1.12.2
+
+# Dev / Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0
+ipykernel==6.29.5

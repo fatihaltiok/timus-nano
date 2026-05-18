@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:5.15
+    container_name: pkc_neo4j
+    environment:
+      NEO4J_AUTH: neo4j/pkc_password
+      NEO4J_PLUGINS: '["apoc"]'
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    volumes:
+      - neo4j_data:/var/lib/neo4j/data
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "pkc_password", "RETURN 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Qdrant läuft bereits nativ auf diesem System (Port 6333) — kein Container nötig.
+  # Um Qdrant in Docker zu starten, diesen Block einkommentieren und den nativen Prozess stoppen.
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   container_name: pkc_qdrant
+  #   ports:
+  #     - "6333:6333"
+  #   volumes:
+  #     - qdrant_storage:/qdrant/storage
+
+  postgres:
+    image: postgres:15
+    container_name: pkc_postgres
+    environment:
+      POSTGRES_DB: pkc
+      POSTGRES_USER: pkc_user
+      POSTGRES_PASSWORD: pkc_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pkc_user -d pkc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: pkc_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  neo4j_data:
+  postgres_data:
