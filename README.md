@@ -121,7 +121,7 @@ Copy `.env.example` to `.env` and configure:
 ```env
 # LLM Model (downloaded automatically from HuggingFace)
 LLM_MODEL=google/gemma-4-E4B-it
-LLM_MAX_TOKENS=1024
+LLM_MAX_TOKENS=8192
 
 # Embedding Model
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
