@@ -292,7 +292,7 @@ def create_report(req: ReportRequest):
 
     # 4. Bericht generieren
     prompt = build_report_prompt(req.topic, vault_context, web_context, history_text)
-    report_text = _query_engine.llm.chat(prompt, max_new_tokens=1024)
+    report_text = _query_engine.llm.chat(prompt, max_new_tokens=16384)
 
     # 5. Metadaten-Header anhängen
     now = datetime.datetime.now()
@@ -369,7 +369,7 @@ def summarize_conversation(req: SummarizeRequest):
 
     from src.llm.prompts import build_conversation_summary_prompt
     prompt = build_conversation_summary_prompt(req.messages)
-    summary = _query_engine.llm.chat(prompt, max_new_tokens=768)
+    summary = _query_engine.llm.chat(prompt, max_new_tokens=4096)
     return {"summary": summary.strip()}
 
 

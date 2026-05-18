@@ -12,9 +12,9 @@ from loguru import logger
 from src.retrieval.web_search import search_and_fetch, format_web_context
 from src.retrieval.query_engine import QueryEngine
 
-TOKENS_PER_SECTION = 4096
-TOKENS_SYNTHESIS   = 8192
-TOKENS_PLAN        = 1024
+TOKENS_PER_SECTION = 8192
+TOKENS_SYNTHESIS   = 16384
+TOKENS_PLAN        = 2048
 
 
 def _clean(text: str) -> str:

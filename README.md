@@ -61,6 +61,21 @@ Timus-Nano (PKC) is a fully local RAG system that indexes your documents, unders
 
 ---
 
+## Token Limits
+
+| Context | Max Tokens |
+|---------|-----------|
+| Chat response (stream) | 8,192 |
+| Report generation | 16,384 |
+| Conversation summary | 4,096 |
+| Research plan | 2,048 |
+| Research section (per subtopic) | 8,192 |
+| Research synthesis | 16,384 |
+
+Deep research across 5 subtopics yields up to **~50,000 tokens** of accumulated content per report.
+
+---
+
 ## Requirements
 
 - Python 3.11+
