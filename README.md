@@ -12,7 +12,8 @@ Timus-Nano (PKC) is a fully local RAG system that indexes your documents, unders
 - **Knowledge graph** for entity relationships (Neo4j)
 - **Conversational memory** with automatic summarization — never loses context
 - **Web search** integrated via DuckDuckGo — current information flows into every answer
-- **Iterative deep research** — autonomous multi-round research agent with 20,000+ word reports
+- **Iterative deep research** — autonomous multi-round research agent with 40,000+ word reports
+- **Hallucination mitigation** — temperature 0.3 for reports, source tagging `[Vault]`/`[Web]`, automatic verification pass
 - **Auto-ingestion** — reports and research are automatically indexed back into the knowledge base
 - **Streaming responses** — token-by-token via Server-Sent Events
 - **Glassmorphism dashboard** — React frontend with Chat, Upload and Monitor tabs
@@ -63,16 +64,27 @@ Timus-Nano (PKC) is a fully local RAG system that indexes your documents, unders
 
 ## Token Limits
 
-| Context | Max Tokens |
-|---------|-----------|
-| Chat response (stream) | 8,192 |
-| Report generation | 16,384 |
-| Conversation summary | 4,096 |
-| Research plan | 2,048 |
-| Research section (per subtopic) | 8,192 |
-| Research synthesis | 16,384 |
+| Context | Max Tokens | Temperature |
+|---------|-----------|-------------|
+| Chat response (stream) | 8,192 | 0.7 |
+| Report generation | 16,384 | 0.3 |
+| Conversation summary | 4,096 | 0.7 |
+| Research plan | 2,048 | 0.5 |
+| Research section (per subtopic) | 8,192 | 0.3 |
+| Research synthesis | 16,384 | 0.3 |
+| Verification pass | 4,096 | 0.3 |
 
-Deep research across 5 subtopics yields up to **~50,000 tokens** of accumulated content per report.
+Deep research across 5 subtopics yields up to **~43,000 words** (~150 pages) of verified content per report.
+
+---
+
+## Hallucination Mitigation
+
+Three layers of protection for factual accuracy in reports:
+
+1. **Low temperature (0.3)** — deterministic, fact-focused generation instead of creative extrapolation
+2. **Source tagging** — every claim in a research section is marked `[Vault]` or `[Web]`; uncertain claims are prefixed with `Unklar:`
+3. **Verification pass** — after synthesis, the model audits its own report against the original sources, marking unverified claims with ⚠️ and confirmed ones with ✓
 
 ---
 
@@ -156,9 +168,10 @@ curl -X POST http://localhost:8080/ingest/directory \
 The research agent autonomously explores a topic across multiple rounds:
 
 1. **Planning** — identifies 3–5 subtopics
-2. **Deep dives** — Vault + Web search per subtopic (4,096 tokens each)
-3. **Synthesis** — full report generation (8,192 tokens)
-4. **Auto-index** — report saved to `reports/` and ingested into PKC
+2. **Deep dives** — Vault + Web search per subtopic, up to 8,192 tokens each, source-tagged
+3. **Synthesis** — full report generation up to 16,384 tokens
+4. **Verification** — automated fact-check pass against original sources
+5. **Auto-index** — report saved to `reports/` and ingested into PKC
 
 Trigger via the **"Tiefenrecherche"** button in the Chat dashboard.
 
