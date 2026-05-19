@@ -186,7 +186,9 @@ class AskRequest(BaseModel):
     query: str
     top_k: int = 5
     history: list = []
-    use_web: bool = True  # Web-Suche standardmäßig aktiv
+    use_web: bool = True
+    temperature: float = 0.7
+    max_tokens: int = 0   # 0 = Umgebungsvariable nutzen
 
 
 @app.post("/ask")
@@ -455,7 +457,8 @@ def ask_stream_sse(req: AskRequest):
         yield f"data: {json.dumps(meta, ensure_ascii=False)}\n\n"
 
         # Dann Tokens streamen
-        for token in _query_engine.llm.chat_stream(messages):
+        max_tok = req.max_tokens if req.max_tokens > 0 else None
+        for token in _query_engine.llm.chat_stream(messages, max_new_tokens=max_tok, temperature=req.temperature):
             payload = {"type": "token", "text": token}
             yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 

@@ -5,6 +5,77 @@ import { askStream, sendFeedback, summarizeConversation, generateReport, researc
 const SUMMARY_THRESHOLD = 8   // 4 user + 4 ai = 8 abgeschlossene Nachrichten
 const KEEP_RECENT = 4         // Letzte 2 Austausche (4 Nachrichten) immer als Volltext
 
+function tempInfo(t) {
+  if (t <= 0.2) return { label: "Deterministisch", text: "PKC wählt immer die wahrscheinlichste Antwort — maximal faktentreu, kaum Variation. Ideal für kritische Faktenabfragen.", color: "var(--good)" }
+  if (t <= 0.4) return { label: "Faktentreu", text: "Sehr präzise und zuverlässig. PKC bleibt nah an den Quellen, minimal kreative Formulierungen. Empfohlen für Berichte und Recherche.", color: "var(--good)" }
+  if (t <= 0.6) return { label: "Ausgewogen", text: "Gute Balance zwischen Präzision und natürlichem Ausdruck. PKC antwortet klar und flüssig, ohne zu fantasieren.", color: "var(--accent-2)" }
+  if (t <= 0.75) return { label: "Standard", text: "Natürliche, konversationelle Antworten. Leichte kreative Freiheit beim Formulieren — gut für alltägliche Fragen.", color: "var(--accent-2)" }
+  if (t <= 0.9) return { label: "Kreativ", text: "PKC formuliert freier und assoziativer. Antworten können überraschend sein — mehr Halluzinationsrisiko bei Fakten.", color: "var(--warn)" }
+  return { label: "Sehr kreativ", text: "Maximale sprachliche Freiheit. PKC kann stark von den Quellen abweichen. Nur für kreative oder experimentelle Zwecke geeignet.", color: "var(--bad)" }
+}
+
+function tokenInfo(t) {
+  if (t <= 1024) return { label: "Kurz", text: "Schnelle, prägnante Antworten — ~750 Wörter. Ideal für einfache Fragen und schnellen Austausch.", color: "var(--good)" }
+  if (t <= 2048) return { label: "Kompakt", text: "Solide Antworten mit etwas Tiefe — ~1.500 Wörter. Gut für Erklärungen und kurze Analysen.", color: "var(--good)" }
+  if (t <= 4096) return { label: "Ausführlich", text: "Detaillierte Antworten — ~3.000 Wörter. PKC kann Zusammenhänge ausführlich erklären.", color: "var(--accent-2)" }
+  if (t <= 8192) return { label: "Tief", text: "Tiefe Analysen — ~6.000 Wörter. PKC entwickelt Gedankengänge vollständig. Antworten dauern länger.", color: "var(--accent-2)" }
+  return { label: "Maximum", text: "Erschöpfende Berichte — ~12.000 Wörter. Für Tiefenrecherche und lange Synthesen. Wartezeit: mehrere Minuten.", color: "var(--warn)" }
+}
+
+const TOKEN_STEPS = [512, 1024, 2048, 4096, 8192, 16384]
+
+function SettingsPanel({ temperature, setTemperature, maxTokens, setMaxTokens }) {
+  const tInfo = tempInfo(temperature)
+  const tkInfo = tokenInfo(maxTokens)
+  const tokenIdx = TOKEN_STEPS.indexOf(maxTokens)
+  const tempFill = `${((temperature - 0.1) / 0.9) * 100}%`
+  const tokenFill = `${(TOKEN_STEPS.indexOf(maxTokens) / (TOKEN_STEPS.length - 1)) * 100}%`
+
+  return (
+    <div className="settings-panel">
+      {/* Temperature */}
+      <div className="settings-row">
+        <span className="settings-label">Temperature</span>
+        <input
+          type="range" className="temp-slider"
+          min="0.1" max="1.0" step="0.05"
+          value={temperature}
+          style={{"--fill": tempFill}}
+          onChange={e => setTemperature(parseFloat(e.target.value))}
+        />
+        <span className="settings-value" style={{color: tInfo.color}}>{temperature.toFixed(2)}</span>
+      </div>
+      <div className="settings-row" style={{marginTop: "-8px"}}>
+        <span />
+        <div className="settings-info" style={{borderColor: tInfo.color}}>
+          <strong style={{color: tInfo.color}}>{tInfo.label}</strong> — {tInfo.text}
+        </div>
+      </div>
+
+      {/* Max Tokens */}
+      <div className="settings-row">
+        <span className="settings-label">Max. Tokens</span>
+        <input
+          type="range" className="token-slider"
+          min="0" max={TOKEN_STEPS.length - 1} step="1"
+          value={tokenIdx >= 0 ? tokenIdx : 3}
+          style={{"--fill": tokenFill}}
+          onChange={e => setMaxTokens(TOKEN_STEPS[parseInt(e.target.value)])}
+        />
+        <span className="settings-value" style={{color: tkInfo.color}}>
+          {maxTokens >= 1024 ? `${maxTokens / 1024}k` : maxTokens}
+        </span>
+      </div>
+      <div className="settings-row" style={{marginTop: "-8px"}}>
+        <span />
+        <div className="settings-info" style={{borderColor: tkInfo.color}}>
+          <strong style={{color: tkInfo.color}}>{tkInfo.label}</strong> — {tkInfo.text}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SummaryBlock({ summary, open, onToggle }) {
   return (
     <div style={{
@@ -167,7 +238,10 @@ export default function Chat() {
   const [busy, setBusy] = useState(false)
   const [useWeb, setUseWeb] = useState(true)
   const [reportState, setReportState] = useState(null)
-  const [research, setResearch] = useState(null)  // null | {active, log, result}
+  const [research, setResearch] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [temperature, setTemperature] = useState(0.7)
+  const [maxTokens, setMaxTokens] = useState(4096)
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
   const summaryInProgress = useRef(false)
@@ -326,6 +400,8 @@ export default function Chat() {
       5,
       history,
       useWeb,
+      temperature,
+      maxTokens,
       (meta) => update({
         sources: meta.sources ?? [],
         suggestions: meta.suggestions ?? [],
@@ -491,6 +567,8 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
+      {showSettings && <SettingsPanel temperature={temperature} setTemperature={setTemperature} maxTokens={maxTokens} setMaxTokens={setMaxTokens} />}
+
       <div className="dock">
         <form className="composer" onSubmit={submit}>
           <textarea
@@ -598,8 +676,25 @@ export default function Chat() {
             </button>
           </span>
 
-          <span>
-            <kbd>↵</kbd> Senden &nbsp; <kbd>⇧ ↵</kbd> Neue Zeile
+          <span style={{display: "flex", alignItems: "center", gap: "12px"}}>
+            <span style={{fontFamily: "var(--mono)", fontSize: "11px", color: "var(--ink-4)"}}>
+              <kbd>↵</kbd> Senden &nbsp; <kbd>⇧ ↵</kbd> Neue Zeile
+            </span>
+            <button
+              onClick={() => setShowSettings(v => !v)}
+              title="Einstellungen"
+              style={{
+                appearance: "none", background: "none", border: "none", cursor: "pointer",
+                color: showSettings ? "var(--accent-2)" : "var(--ink-4)",
+                padding: "2px", display: "flex", alignItems: "center",
+                transition: "color 200ms",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
           </span>
         </div>
       </div>

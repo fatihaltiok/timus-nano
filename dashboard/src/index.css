@@ -694,3 +694,110 @@ table.log .bad { color: var(--bad); }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .monitor-row { grid-template-columns: 1fr; }
 }
+
+/* === Settings Panel === */
+.settings-panel {
+  border-top: 1px solid var(--line-2);
+  background: linear-gradient(180deg, rgba(124,111,205,0.03), rgba(5,8,16,0.4));
+  padding: 20px clamp(32px, 8vw, 140px);
+  animation: rise 220ms ease both;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 56px;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.settings-row:last-child { margin-bottom: 0; }
+
+.settings-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-value {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent-2);
+  font-weight: 400;
+  text-align: right;
+}
+
+.settings-info {
+  grid-column: 2 / 4;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-left: 2px solid var(--accent);
+  background: rgba(124,111,205,0.05);
+  border-radius: 0 6px 6px 0;
+  margin-top: -10px;
+  margin-bottom: 8px;
+  transition: all 220ms ease;
+}
+
+/* Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--line);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(124,111,205,0.2), 0 0 12px var(--accent-glow);
+  cursor: pointer;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 5px rgba(124,111,205,0.25), 0 0 20px var(--accent-glow);
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(124,111,205,0.2);
+  cursor: pointer;
+}
+
+/* Slider track fill via CSS custom property */
+input[type="range"].temp-slider {
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--fill, 30%),
+    var(--line) var(--fill, 30%),
+    var(--line) 100%
+  );
+}
+
+input[type="range"].token-slider {
+  background: linear-gradient(
+    to right,
+    var(--good) 0%,
+    var(--good) var(--fill, 50%),
+    var(--line) var(--fill, 50%),
+    var(--line) 100%
+  );
+}

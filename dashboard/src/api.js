@@ -92,13 +92,13 @@ export async function generateReport(topic, history = [], useWeb = true) {
   return r.json()
 }
 
-export function askStream(query, topK = 5, history = [], useWeb = true, onMeta, onToken, onDone, onError) {
+export function askStream(query, topK = 5, history = [], useWeb = true, temperature = 0.7, maxTokens = 0, onMeta, onToken, onDone, onError) {
   const controller = new AbortController()
 
   fetch(`${BASE}/ask/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, top_k: topK, history, use_web: useWeb }),
+    body: JSON.stringify({ query, top_k: topK, history, use_web: useWeb, temperature, max_tokens: maxTokens }),
     signal: controller.signal,
   })
     .then(async (res) => {
